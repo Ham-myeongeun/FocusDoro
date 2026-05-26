@@ -1,0 +1,6 @@
+﻿export const TIMER_CONFIG = {
+  FOCUS: 25 * 60,
+  SHORT_BREAK: 5 * 60,
+  LONG_BREAK: 15 * 60,
+  SESSIONS_BEFORE_LONG: 4,
+};

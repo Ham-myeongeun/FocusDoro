@@ -1,25 +1,47 @@
 ﻿import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import useTimer from '../hooks/useTimer';
 import useStats from '../hooks/useStats';
+import useNotification from '../hooks/useNotification';
 import CircularTimer from '../components/CircularTimer';
 import SessionDots from '../components/SessionDots';
 import ControlButtons from '../components/ControlButtons';
 import { COLORS } from '../constants/colors';
+import { loadSettings } from '../utils/storage';
 
 export default function TimerScreen() {
-  const { secondsLeft, isRunning, isFocus, session, completedToday, progress, start, pause, reset, skip } = useTimer();
+  const { secondsLeft, isRunning, isFocus, session, completedToday, progress, start, pause, reset, skip, applySettings } = useTimer();
   const { addSession } = useStats();
+  const { notifySessionEnd } = useNotification();
   const prevCompleted = useRef(completedToday);
+  const prevIsFocus = useRef(isFocus);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadSettings().then(({ focusMin, breakMin }) => {
+        applySettings(focusMin, breakMin);
+      });
+    }, [])
+  );
 
   useEffect(() => {
     if (completedToday > prevCompleted.current) {
       addSession();
+      notifySessionEnd(true);
     }
     prevCompleted.current = completedToday;
   }, [completedToday]);
+
+  useEffect(() => {
+    if (prevIsFocus.current === true && isFocus === false) {
+    } else if (prevIsFocus.current === false && isFocus === true) {
+      notifySessionEnd(false);
+    }
+    prevIsFocus.current = isFocus;
+  }, [isFocus]);
 
   useEffect(() => {
     if (isRunning) {

@@ -1,8 +1,9 @@
-﻿import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+﻿import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../constants/colors';
 import { TIMER_CONFIG } from '../constants/timer';
+import { saveSettings, loadSettings } from '../utils/storage';
 
 const FOCUS_OPTIONS = [15, 20, 25, 30, 45, 50];
 const BREAK_OPTIONS = [3, 5, 10, 15];
@@ -10,6 +11,20 @@ const BREAK_OPTIONS = [3, 5, 10, 15];
 export default function SettingsScreen() {
   const [focusMin, setFocusMin] = useState(TIMER_CONFIG.FOCUS / 60);
   const [breakMin, setBreakMin] = useState(TIMER_CONFIG.SHORT_BREAK / 60);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    loadSettings().then(({ focusMin: f, breakMin: b }) => {
+      setFocusMin(f);
+      setBreakMin(b);
+    });
+  }, []);
+
+  const handleSave = async () => {
+    await saveSettings(focusMin, breakMin);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -26,11 +41,9 @@ export default function SettingsScreen() {
               <TouchableOpacity
                 key={min}
                 style={[styles.optionBtn, focusMin === min && styles.optionBtnActive]}
-                onPress={() => setFocusMin(min)}
+                onPress={() => { setFocusMin(min); setSaved(false); }}
               >
-                <Text style={[styles.optionText, focusMin === min && styles.optionTextActive]}>
-                  {min}분
-                </Text>
+                <Text style={[styles.optionText, focusMin === min && styles.optionTextActive]}>{min}분</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -46,11 +59,9 @@ export default function SettingsScreen() {
               <TouchableOpacity
                 key={min}
                 style={[styles.optionBtn, breakMin === min && styles.optionBtnActive]}
-                onPress={() => setBreakMin(min)}
+                onPress={() => { setBreakMin(min); setSaved(false); }}
               >
-                <Text style={[styles.optionText, breakMin === min && styles.optionTextActive]}>
-                  {min}분
-                </Text>
+                <Text style={[styles.optionText, breakMin === min && styles.optionTextActive]}>{min}분</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -76,8 +87,15 @@ export default function SettingsScreen() {
           </View>
         </View>
 
+        <TouchableOpacity
+          style={[styles.saveBtn, saved && styles.saveBtnDone]}
+          onPress={handleSave}
+        >
+          <Text style={styles.saveBtnText}>{saved ? '✓ 저장됐어요!' : '타이머에 적용하기'}</Text>
+        </TouchableOpacity>
+
         <View style={styles.tipCard}>
-          <Text style={styles.tipText}>💡 설정 변경은 다음 세션부터 적용돼요</Text>
+          <Text style={styles.tipText}>💡 저장 후 타이머 탭으로 이동하면 바로 적용돼요</Text>
         </View>
       </View>
     </SafeAreaView>
@@ -102,6 +120,9 @@ const styles = StyleSheet.create({
   infoNum: { fontSize: 28, fontWeight: '300', color: COLORS.text },
   infoLabel: { fontSize: 10, color: COLORS.textMuted, marginTop: 2 },
   infoDivider: { fontSize: 18, color: COLORS.sessionEmpty, marginBottom: 16 },
+  saveBtn: { backgroundColor: COLORS.focus, borderRadius: 50, paddingVertical: 16, alignItems: 'center', marginBottom: 16 },
+  saveBtnDone: { backgroundColor: COLORS.rest },
+  saveBtnText: { color: '#fff', fontSize: 15, fontWeight: '500' },
   tipCard: { backgroundColor: '#EAF3DE', borderRadius: 12, padding: 14 },
   tipText: { fontSize: 12, color: '#27500A', lineHeight: 18 },
 });
